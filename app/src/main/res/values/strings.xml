@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">XphotoView</string>
+    <string name="my_nickname">xyzxqs</string>
+    <string name="my_avatar_url">http://tva2.sinaimg.cn/crop.0.0.399.399.180/006xULEjgw1f6jtu7eqr1j30b40b43zb.jpg</string>
+    <string name="post_content">XphotoView, a Android Custom ImageView Component with Google Photos Gestures. <u>https://github.com/xyzxqs/XphotoView</u></string>
+    <string-array name="photos">
+        <item>http://ww1.sinaimg.cn/large/7a8aed7bgw1f3j8jt6qn8j20vr15owvk.jpg</item>
+        <item>http://7xi8d6.com1.z0.glb.clouddn.com/2017-03-02-16906481_1495916493759925_5770648570629718016_n.jpg</item>
+        <item>http://ww2.sinaimg.cn/large/610dc034gw1f9lmfwy2nij20u00u076w.jpg</item>
+        <item>http://tva2.sinaimg.cn/crop.0.0.399.399.180/006xULEjgw1f6jtu7eqr1j30b40b43zb.jpg</item>
+        <item>http://wx2.sinaimg.cn/mw1024/639c6851gy1fcq85bjkxkj20go4s8wq9.jpg</item>
+    </string-array>
+</resources>

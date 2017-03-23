@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<io.github.xyzxqs.app.xphotoview.ui.ScrimInsetsFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".ui.PhotoViewActivity">
+
+    <View
+        android:id="@+id/background_shadow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0"
+        android:background="#ff000000" />
+
+    <io.github.xyzxqs.libs.xphotoview.XphotoView
+        android:id="@+id/photo_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:src="@drawable/ali" />
+
+</io.github.xyzxqs.app.xphotoview.ui.ScrimInsetsFrameLayout>
