@@ -51,7 +51,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
         void onReqUpdateBgAlpha(float alpha);
     }
 
-    private static final float H_SPACE_CLOSE_WINDOW = 27;
+    private static final float H_SPACE_CLOSE_WINDOW = 40;
     private static final float H_SPACE_THRESHOLD = 200;
 
     private GooglePhotosGestureDetector gestureDetector;
@@ -133,7 +133,6 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
      * <p>
      * Note: for this work, please set the photo init args by call
      * {@link #setInitArgs(int, int, int, int, Callback)} before the image laid out.
-     * if the init args not set, call this method, it just animate to fit image view.
      */
     public void finishPhotoPreview() {
         if (initArgsHasSet()) {
@@ -161,24 +160,24 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
                     })
                     .start();
         } else {
-            animate2FitView();
+            Log.w(TAG, "finishPhotoPreview: no init args set");
         }
     }
 
     @Override
     protected void onImageLaidOut() {
         super.onImageLaidOut();
-
         laidOutScaleX = imageViewWidth / drawableIntrinsicWidth;
         isLongPhoto = laidOutScaleX * drawableIntrinsicHeight > imageViewHeight;
         if (initArgsHasSet()) {
             ViewCompat.setAlpha(this, 0.0f);
             animateRect2FitView(initLeft, initTop, initWidth, initHeight);
         } else {
-
             scaleImageAtPosition(imageViewWidth / drawableIntrinsicWidth, 0, 0);
             float dx = 0;
-            float dy = isLongPhoto ? 0 : (imageViewHeight - laidOutScaleX * drawableIntrinsicHeight) / 2;
+            float dy = isLongPhoto ?
+                    0
+                    : (imageViewHeight - laidOutScaleX * drawableIntrinsicHeight) / 2;
             translateImageToPosition(dx, dy);
         }
     }
@@ -325,7 +324,10 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
         int ws = (int) (imageViewWidth - w);
         int cx = (int) ((imageViewWidth - w) / 2);
         int cy = (int) ((imageViewHeight - h) / 2);
-        if ((hs < 0 || ws < 0) && !isDoubleTapping && !isRotated() && !(isInSFScrollChangeScale && isLongPhoto)) {
+        if ((hs < 0 || ws < 0)
+                && !isDoubleTapping
+                && !isRotated()
+                && !(isInSFScrollChangeScale && isLongPhoto)) {
             scrollerCompat.fling((int) getImageTranslateX(), (int) getImageTranslateY(),
                     (int) velocityX,
                     (int) velocityY,
@@ -333,8 +335,8 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
                     ws < 0 ? 0 : cx,
                     hs < 0 ? hs : cy,
                     hs < 0 ? 0 : cy,
-                    100,
-                    100);
+                    80,
+                    80);
             isOnFling = true;
             invalidate();
         }
@@ -395,14 +397,21 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
         isNewEvent4Scale = true;
         isNew4SFScroll = true;
         isInSFScrollChangeScale = false;
-        if (!isDoubleTapping && !isOnFling) {
+        if (!isDoubleTapping) {
             float scale = getImageScaleX();
             if (scale * drawableIntrinsicWidth <= imageViewWidth - (H_SPACE_THRESHOLD - H_SPACE_CLOSE_WINDOW)) {
-                finishPhotoPreview();
-            } else if ((Math.abs(getImageAngle()) > 10 || scale < laidOutScaleX) && !isLongPhoto) {
-                animate2FitView();
-            } else {
-                animate2FitXYIfNeed(scale < laidOutScaleX);
+                if (initArgsHasSet()) {
+                    finishPhotoPreview();
+                } else if (!isOnFling) {
+                    //if the init args not set, just animate to fit image view.
+                    animate2FitView();
+                }
+            } else if (!isOnFling) {
+                if ((Math.abs(getImageAngle()) > 10 || scale < laidOutScaleX) && !isLongPhoto) {
+                    animate2FitView();
+                } else {
+                    animate2FitXYIfNeed(scale < laidOutScaleX);
+                }
             }
             return true;
         }
@@ -505,9 +514,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
 
 
     private void animateRect2FitView(int initLeft, int initTop, int initWidth, int initHeight) {
-
         float h = laidOutScaleX * drawableIntrinsicHeight;
-
         float endLeft = 0;
         float endTop = isLongPhoto ? 0 : (imageViewHeight - h) / 2;
 
