@@ -21,8 +21,10 @@ import android.content.Context;
 import android.graphics.Matrix;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ScrollerCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import io.github.xyzxqs.libs.xphotoview.GooglePhotosGestureDetector.GooglePhotosGestureListener;
@@ -49,7 +51,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
         void onReqUpdateBgAlpha(float alpha);
     }
 
-    private static final float H_SPACE_CLOSE_WINDOW = 30;
+    private static final float H_SPACE_CLOSE_WINDOW = 27;
     private static final float H_SPACE_THRESHOLD = 200;
 
     private GooglePhotosGestureDetector gestureDetector;
@@ -69,7 +71,11 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     private float backgroundAlpha = 1.0f;
 
     private float initMotionY4Scroll;
-    private boolean isNewEvent4Scroll = true;
+
+    //is new motion event for single finger scroll
+    private boolean isNew4SFScroll = true;
+    //is in single finger scroll to change scale state
+    private boolean isInSFScrollChangeScale = false;
 
     private boolean isClosing = false;
     private boolean isNewEvent4Scale = true;
@@ -166,7 +172,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
         laidOutScaleX = imageViewWidth / drawableIntrinsicWidth;
         isLongPhoto = laidOutScaleX * drawableIntrinsicHeight > imageViewHeight;
         if (initArgsHasSet()) {
-            setAlpha(0.0f);
+            ViewCompat.setAlpha(this, 0.0f);
             animateRect2FitView(initLeft, initTop, initWidth, initHeight);
         } else {
 
@@ -252,9 +258,9 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
 
     @Override
     public boolean onSingleFingerScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-        if (isNewEvent4Scroll) {
+        if (isNew4SFScroll) {
             initMotionY4Scroll = e2.getY();
-            isNewEvent4Scroll = false;
+            isNew4SFScroll = false;
         }
         float currScale = getImageScaleX();
         float offset, cx, cy;
@@ -268,10 +274,11 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
             cy = imageViewHeight / 2;
         }
         if (offset < H_SPACE_THRESHOLD && currScale <= laidOutScaleX * 1.05) {
+            isInSFScrollChangeScale = true;
             final float scale = (imageViewWidth - offset) / drawableIntrinsicWidth;
             scaleImageAtPosition(scale, cx, cy);
         }
-        translateImageToPosition(getImageTranslateX() - distanceX, getImageTranslateY() - distanceY);
+        postTranslate(-distanceX, -distanceY);
         return true;
     }
 
@@ -290,10 +297,14 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
         if (dy > 0) {
             if (top >= 0) {
                 overTop = dy;
+            } else {
+                isInSFScrollChangeScale = false;
             }
         } else {
             if (bottom <= imageViewHeight) {
                 overBottom = -dy;
+            } else {
+                isInSFScrollChangeScale = false;
             }
         }
 
@@ -302,7 +313,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
 
     @Override
     public boolean onMultiFingerScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-        translateImageToPosition(getImageTranslateX() - distanceX, getImageTranslateY() - distanceY);
+        postTranslate(-distanceX, -distanceY);
         return true;
     }
 
@@ -314,7 +325,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
         int ws = (int) (imageViewWidth - w);
         int cx = (int) ((imageViewWidth - w) / 2);
         int cy = (int) ((imageViewHeight - h) / 2);
-        if ((hs < 0 || ws < 0) && !isDoubleTapping && !isRotated()) {
+        if ((hs < 0 || ws < 0) && !isDoubleTapping && !isRotated() && !(isInSFScrollChangeScale && isLongPhoto)) {
             scrollerCompat.fling((int) getImageTranslateX(), (int) getImageTranslateY(),
                     (int) velocityX,
                     (int) velocityY,
@@ -345,7 +356,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
                 invalidate();
             } else {
                 isOnFling = false;
-                animate2FitXYIfNeed(false);
+                animate2FitXYIfNeed(isLongPhoto);
             }
         }
     }
@@ -382,8 +393,9 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     @Override
     public boolean onActionUp(MotionEvent event) {
         isNewEvent4Scale = true;
-        isNewEvent4Scroll = true;
-        if (!isDoubleTapping) {
+        isNew4SFScroll = true;
+        isInSFScrollChangeScale = false;
+        if (!isDoubleTapping && !isOnFling) {
             float scale = getImageScaleX();
             if (scale * drawableIntrinsicWidth <= imageViewWidth - (H_SPACE_THRESHOLD - H_SPACE_CLOSE_WINDOW)) {
                 finishPhotoPreview();
@@ -514,7 +526,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
                 .addAnimatorListener(new ImageMatrixAnimator.SimpleAnimatorListener() {
                     @Override
                     public void onAnimationStart(ImageMatrixAnimator animation) {
-                        setAlpha(1.0f);
+                        ViewCompat.setAlpha(XphotoView.this, 1.0f);
                     }
                 })
                 .start();
@@ -522,7 +534,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
 
     private void animate2FitView() {
         float h = imageViewWidth / drawableIntrinsicWidth * drawableIntrinsicHeight;
-        float endTop = h > imageViewHeight ? 0 : (imageViewHeight - h) / 2;
+        float endTop = isLongPhoto ? 0 : (imageViewHeight - h) / 2;
         new ImageMatrixAnimator.Builder(this)
                 .toRotate(0)
                 .toTranslateX(imageViewWidth / 2)
