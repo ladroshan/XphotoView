@@ -26,6 +26,7 @@ import android.support.v4.widget.ScrollerCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.animation.Interpolator;
 
 import io.github.xyzxqs.libs.xphotoview.GooglePhotosGestureDetector.GooglePhotosGestureListener;
 
@@ -56,6 +57,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
 
     private GooglePhotosGestureDetector gestureDetector;
     private ScrollerCompat scrollerCompat;
+    private Interpolator zoomInOutInterpolator;
 
     private Callback callback;
     private int initLeft;
@@ -159,7 +161,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
                     })
                     .start();
         } else {
-            Log.w(TAG, "dismissPreview: no init args set");
+            Log.w(TAG, "dismissPreview: ", new Throwable("no init args set, skip..."));
         }
     }
 
@@ -220,16 +222,29 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     public boolean onDoubleTapEvent(MotionEvent e) {
         if (e.getActionMasked() == MotionEvent.ACTION_UP) {
             isDoubleTapping = true;
-            float scale = getNextStepScale();
-            animate2ZoomImage(scale, e.getX(), e.getY());
+            if (isCurrStepScale()) {
+                float scale = getNextStepValue() * laidOutScaleX;
+                animate2ZoomImage(scale, e.getX(), e.getY());
+            } else {
+                animate2ZoomImage(laidOutScaleX, e.getX(), e.getY());
+                scaleStepsIndex = 0;
+            }
             return true;
         }
         return false;
     }
 
-    private float getNextStepScale() {
-        return scaleStepValues[((++scaleStepsIndex) % scaleStepValues.length)]
-                * imageViewWidth / drawableIntrinsicWidth;
+    private boolean isCurrStepScale() {
+        float scale = getImageScaleX() * drawableIntrinsicWidth / imageViewWidth;
+        return Math.abs(scale - getCurrStepValue()) < 0.1;
+    }
+
+    private float getCurrStepValue() {
+        return scaleStepValues[((scaleStepsIndex) % scaleStepValues.length)];
+    }
+
+    private float getNextStepValue() {
+        return scaleStepValues[((++scaleStepsIndex) % scaleStepValues.length)];
     }
 
     @Override
@@ -417,11 +432,11 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     }
     */
 
-    private interface XYCheckerCallback {
-        void onNeedUpdate(boolean xNeed, float centerX, boolean yNeed, float centerY);
+    private interface XYCallback {
+        void theCheckResult(boolean xNeed, float centerX, boolean yNeed, float centerY);
     }
 
-    private void xyCheck(XYCheckerCallback callback) {
+    private void checkXY(XYCallback callback) {
         final float h = getImageScaleY() * drawableIntrinsicHeight;
         final float w = getImageScaleX() * drawableIntrinsicWidth;
         boolean xNeed = true, yNeed = true;
@@ -454,14 +469,14 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
             cx = imageViewWidth / 2;
         }
 
-        callback.onNeedUpdate(xNeed, cx, yNeed, cy);
+        callback.theCheckResult(xNeed, cx, yNeed, cy);
     }
 
     private void animate2FitXYIfNeed(final boolean fitWidth) {
         if (!isFitXYUpdating) {
-            xyCheck(new XYCheckerCallback() {
+            checkXY(new XYCallback() {
                 @Override
-                public void onNeedUpdate(boolean xNeed, float centerX, boolean yNeed, float centerY) {
+                public void theCheckResult(boolean xNeed, float centerX, boolean yNeed, float centerY) {
                     if (xNeed || yNeed) {
                         isFitXYUpdating = true;
                         ImageMatrixAnimator.Builder builder = new ImageMatrixAnimator.Builder(XphotoView.this);
@@ -529,14 +544,29 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
                 .start();
     }
 
-    private void animate2ZoomImage(float scale, float centerX, float centerY) {
-        new ImageMatrixAnimator.Builder(this)
+    private void animate2ZoomImage(final float scale, float centerX, float centerY) {
+        if (zoomInOutInterpolator == null) {
+            zoomInOutInterpolator = new EaseInOutInterpolator();
+        }
+        ImageMatrixAnimator.Builder builder = new ImageMatrixAnimator.Builder(this)
                 .toScaleX(scale)
                 .toScaleY(scale)
-                .setScaleInterpolator(new EaseInOutInterpolator())
-                .setAnimCenter(centerX, centerY)
-                .duration(220)
-                .build()
+                .setScaleInterpolator(zoomInOutInterpolator)
+                .toRotate(0)
+                .duration(220);
+        if (scale == laidOutScaleX) {
+            if (!isLongPhoto) {
+                builder.toTranslateX(imageViewWidth / 2);
+                builder.toTranslateY(imageViewHeight / 2);
+            } else {
+                builder.toTranslateX(imageViewWidth / 2);
+                builder.toTranslateY(centerY);
+                builder.setAnimCenter(imageCenter[0], centerY);
+            }
+        } else {
+            builder.setAnimCenter(centerX, centerY);
+        }
+        builder.build()
                 .start();
     }
 }
