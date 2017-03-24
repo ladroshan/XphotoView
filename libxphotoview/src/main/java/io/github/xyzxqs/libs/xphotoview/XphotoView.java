@@ -38,10 +38,10 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
 
     public interface Callback {
         /**
-         * notify that the photo preview has finished. you may want to call {@link Activity#finish()}
+         * notify that the photo preview has been dismissed. you may want to call {@link Activity#finish()}
          * and {@link Activity#overridePendingTransition(int, int)} whit (0,0) args on this callback.
          */
-        void onPreviewFinished();
+        void onPreviewDismissed();
 
         /**
          * request update the background alpha.
@@ -76,7 +76,6 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     private boolean isNew4SFScroll = true;
     //is in single finger scroll to change scale state
     private boolean isInSFScrollChangeScale = false;
-
     private boolean isClosing = false;
     private boolean isNewEvent4Scale = true;
     private boolean firstScaleIsZoomOut = true;
@@ -128,13 +127,13 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     }
 
     /**
-     * Finish the photo preview. when the animation finished, the {@link XphotoView.Callback#onReqUpdateBgAlpha(float)}
+     * Dismiss the photo preview. when the animation finished, the {@link Callback#onPreviewDismissed()}
      * will callback.
      * <p>
      * Note: for this work, please set the photo init args by call
      * {@link #setInitArgs(int, int, int, int, Callback)} before the image laid out.
      */
-    public void finishPhotoPreview() {
+    public void dismissPreview() {
         if (initArgsHasSet()) {
             new ImageMatrixAnimator.Builder(this)
                     .toRotate(0)
@@ -153,14 +152,14 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
                         @Override
                         public void onAnimationEnd(ImageMatrixAnimator animation) {
                             if (callback != null) {
-                                callback.onPreviewFinished();
+                                callback.onPreviewDismissed();
                             }
                             animation.removeAnimatorListener(this);
                         }
                     })
                     .start();
         } else {
-            Log.w(TAG, "finishPhotoPreview: no init args set");
+            Log.w(TAG, "dismissPreview: no init args set");
         }
     }
 
@@ -401,7 +400,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
             float scale = getImageScaleX();
             if (scale * drawableIntrinsicWidth <= imageViewWidth - (H_SPACE_THRESHOLD - H_SPACE_CLOSE_WINDOW)) {
                 if (initArgsHasSet()) {
-                    finishPhotoPreview();
+                    dismissPreview();
                 } else if (!isOnFling) {
                     //if the init args not set, just animate to fit image view.
                     animate2FitView();

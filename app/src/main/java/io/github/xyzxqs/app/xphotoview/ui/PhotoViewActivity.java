@@ -18,8 +18,8 @@ import io.github.xyzxqs.libs.xphotoview.XphotoView;
 
 public class PhotoViewActivity extends AppCompatActivity {
     private static final String TAG = "PhotoViewActivity";
-    private XphotoView imageView;
-    private View shawBackground;
+    private XphotoView xphotoView;
+    private View backgroundView;
 
     private int left, top, width, height;
 
@@ -28,8 +28,8 @@ public class PhotoViewActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_photo_view);
 
-        imageView = (XphotoView) findViewById(R.id.photo_image);
-        shawBackground = findViewById(R.id.background_shadow);
+        xphotoView = (XphotoView) findViewById(R.id.photo_image);
+        backgroundView = findViewById(R.id.background_shadow);
 
         Intent intent = getIntent();
         String url = intent.getStringExtra("photo_url");
@@ -38,30 +38,29 @@ public class PhotoViewActivity extends AppCompatActivity {
         width = intent.getIntExtra("width", 0);
         height = intent.getIntExtra("height", 0);
 
-        imageView.setInitArgs(left, top, width, height, new XphotoView.Callback() {
+        xphotoView.setInitArgs(left, top, width, height, new XphotoView.Callback() {
             @Override
-            public void onPreviewFinished() {
+            public void onPreviewDismissed() {
                 finish();
                 overridePendingTransition(0, 0);
             }
 
             @Override
             public void onReqUpdateBgAlpha(float alpha) {
-                shawBackground.setAlpha(alpha);
+                backgroundView.setAlpha(alpha);
             }
         });
 
         if (!TextUtils.isEmpty(url)) {
             Glide.with(this)
                     .load(url)
-                    .into(imageView);
+                    .into(xphotoView);
         }
 
     }
 
     @Override
     public void onBackPressed() {
-//        finish();
-        imageView.finishPhotoPreview();
+        xphotoView.dismissPreview();
     }
 }

@@ -49,15 +49,15 @@ public class MainActivity extends AbsListActivity {
 
     private void initItems() {
         Post post = new Post();
-        post.photos = new ArrayList<>();
-        post.photos.addAll(Arrays.asList(getResources().getStringArray(R.array.photos)));
 
         post.userName =getString(R.string.my_nickname);
         post.avatarUrl = getString(R.string.my_avatar_url);
-        post.commentCount = 233;
-        post.readCount = 1024;
         post.createTime = System.currentTimeMillis();
         post.postContent = getString(R.string.post_content);
+        post.photos = new ArrayList<>();
+        post.photos.addAll(Arrays.asList(getResources().getStringArray(R.array.photos)));
+        post.commentCount = 233;
+        post.readCount = 1024;
 
         int i = 10;
         while (i-- > 0)
