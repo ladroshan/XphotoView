@@ -220,23 +220,11 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     public boolean onDoubleTapEvent(MotionEvent e) {
         if (e.getActionMasked() == MotionEvent.ACTION_UP) {
             isDoubleTapping = true;
-            if (isTheRightScale()) {
-                float scale = getNextStepScale();
-                if (isTheFitScale()) {
-                    animate2FitView();
-                } else {
-                    animate2ZoomImage(scale, e.getX(), e.getY());
-                }
-            } else {
-                animate2FitView();
-            }
+            float scale = getNextStepScale();
+            animate2ZoomImage(scale, e.getX(), e.getY());
             return true;
         }
         return false;
-    }
-
-    private boolean isTheFitScale() {
-        return scaleStepValues[(scaleStepsIndex % scaleStepValues.length)] == 1;
     }
 
     private float getNextStepScale() {
