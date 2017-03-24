@@ -232,16 +232,6 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
                 * imageViewWidth / drawableIntrinsicWidth;
     }
 
-    private boolean isTheRightScale() {
-        float scale = getImageScaleX() * drawableIntrinsicWidth / imageViewWidth;
-        for (float scaleStepValue : scaleStepValues) {
-            if (Math.abs(scale - scaleStepValue) < 0.1) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Override
     public boolean onSingleFingerScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         if (isNew4SFScroll) {
@@ -498,7 +488,6 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
             });
         }
     }
-
 
     private void animateRect2FitView(int initLeft, int initTop, int initWidth, int initHeight) {
         float h = laidOutScaleX * drawableIntrinsicHeight;
