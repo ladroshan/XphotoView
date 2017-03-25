@@ -4,46 +4,49 @@ XphotoView, a Android Custom ImageView Component with Google Photos Gestures
 ## Features
 
 * Inherit from AppCompatImageView, all animation back support to minSdkVersion 9
-* All Animation implemented by one matrix Animator: [ImageMatrixAnimator](libxphotoview/src/main/java/io/github/xyzxqs/libs/xphotoview/ImageMatrixAnimator.java)
+* All Animation implemented by one matrix Animator: [ImageMatrixAnimator](xphotoview/src/main/java/io/github/xyzxqs/libs/xphotoview/ImageMatrixAnimator.java)
 * Double tap or multi finger to zoom in/out, fling, slide to dismiss the preview, etc.
 the gesture behavior more like Google Photos
 * Long photo preview supported.
 
+## Screenshots
+
+<img src="/screenshots/xphotoview-demo.gif" alt="screenshot" title="xphotoview" width="270" height="486" />
 
 ## Getting started
 With gradle:
 ```groovy
 dependencies {
-    compile 'io.github.xyzxqs.libs:libxphotoview:1.0.1'
+    compile 'io.github.xyzxqs.libs:xphotoview:1.0.0'
 }
 ```
 
 ## Usage
 
-as sample activity:
+As sample activity:
 ```java
 public class PhotoViewActivity extends AppCompatActivity {
     private static final String TAG = "PhotoViewActivity";
     private XphotoView xphotoView;
     private View backgroundView;
-
+ 
     private int left, top, width, height;
-
+ 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_photo_view);
-
+ 
         xphotoView = (XphotoView) findViewById(R.id.photo_image);
         backgroundView = findViewById(R.id.background_shadow);
-
+ 
         Intent intent = getIntent();
         String url = intent.getStringExtra("photo_url");
         left = intent.getIntExtra("left", 0);
         top = intent.getIntExtra("top", 0);
         width = intent.getIntExtra("width", 0);
         height = intent.getIntExtra("height", 0);
-
+ 
         //before photo laid out:
         xphotoView.setInitArgs(left, top, width, height, new XphotoView.Callback() {
             @Override
@@ -57,16 +60,16 @@ public class PhotoViewActivity extends AppCompatActivity {
                 backgroundView.setAlpha(alpha);
             }
         });
-
+ 
         //then load photo
         if (!TextUtils.isEmpty(url)) {
             Glide.with(this)
                     .load(url)
                     .into(xphotoView);
         }
-
+ 
     }
-
+ 
     @Override
     public void onBackPressed() {
         //if you want dismiss preview
