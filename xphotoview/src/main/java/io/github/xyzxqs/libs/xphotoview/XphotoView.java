@@ -1,17 +1,17 @@
-/**
- * Copyright 2017 xyzxqs (xyzxqs@gmail.com)
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+/*
+  Copyright 2017 xyzxqs (xyzxqs@gmail.com)
+  <p>
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  <p>
+  http://www.apache.org/licenses/LICENSE-2.0
+  <p>
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
  */
 
 package io.github.xyzxqs.libs.xphotoview;
@@ -26,7 +26,6 @@ import android.support.v4.widget.ScrollerCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.animation.Interpolator;
 
 import io.github.xyzxqs.libs.xphotoview.GooglePhotosGestureDetector.GooglePhotosGestureListener;
 
@@ -57,7 +56,6 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
 
     private GooglePhotosGestureDetector gestureDetector;
     private ScrollerCompat scrollerCompat;
-    private Interpolator zoomInOutInterpolator;
 
     private Callback callback;
     private int initLeft;
@@ -432,11 +430,7 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     }
     */
 
-    private interface XYCallback {
-        void theCheckResult(boolean xNeed, float centerX, boolean yNeed, float centerY);
-    }
-
-    private void checkXY(XYCallback callback) {
+    private void animate2FitXYIfNeed(final boolean fitWidth) {
         final float h = getImageScaleY() * drawableIntrinsicHeight;
         final float w = getImageScaleX() * drawableIntrinsicWidth;
         boolean xNeed = true, yNeed = true;
@@ -468,39 +462,27 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
         } else {
             cx = imageViewWidth / 2;
         }
-
-        callback.theCheckResult(xNeed, cx, yNeed, cy);
-    }
-
-    private void animate2FitXYIfNeed(final boolean fitWidth) {
         if (!isFitXYUpdating) {
-            checkXY(new XYCallback() {
-                @Override
-                public void theCheckResult(boolean xNeed, float centerX, boolean yNeed, float centerY) {
-                    if (xNeed || yNeed) {
-                        isFitXYUpdating = true;
-                        ImageMatrixAnimator.Builder builder = new ImageMatrixAnimator.Builder(XphotoView.this);
-                        builder.toRotate(0);
-                        if (xNeed) builder.toTranslateX(centerX);
-                        if (yNeed) builder.toTranslateY(centerY);
-                        if (fitWidth) {
-                            float h = laidOutScaleX * drawableIntrinsicHeight;
-                            builder.toScaleX(imageViewWidth / drawableIntrinsicWidth);
-                            builder.toScaleY(h / drawableIntrinsicHeight);
-                        }
-                        builder.duration(200)
-                                .build()
-                                .addAnimatorListener(new ImageMatrixAnimator.SimpleAnimatorListener() {
-
-                                    @Override
-                                    public void onAnimationEnd(ImageMatrixAnimator animation) {
-                                        isFitXYUpdating = false;
-                                    }
-                                })
-                                .start();
-                    }
+            if (xNeed || yNeed) {
+                if (fitWidth) {
+                    animate2ZoomImage(laidOutScaleX, imageViewWidth / 2, imageViewHeight / 2);
+                    return;
                 }
-            });
+                isFitXYUpdating = true;
+                ImageMatrixAnimator.Builder builder = new ImageMatrixAnimator.Builder(this);
+                builder.toRotate(0);
+                if (xNeed) builder.toTranslateX(cx);
+                if (yNeed) builder.toTranslateY(cy);
+                builder.duration(200)
+                        .build()
+                        .addAnimatorListener(new ImageMatrixAnimator.SimpleAnimatorListener() {
+                            @Override
+                            public void onAnimationEnd(ImageMatrixAnimator animation) {
+                                isFitXYUpdating = false;
+                            }
+                        })
+                        .start();
+            }
         }
     }
 
@@ -545,28 +527,69 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     }
 
     private void animate2ZoomImage(final float scale, float centerX, float centerY) {
-        if (zoomInOutInterpolator == null) {
-            zoomInOutInterpolator = new EaseInOutInterpolator();
-        }
-        ImageMatrixAnimator.Builder builder = new ImageMatrixAnimator.Builder(this)
+        final ImageMatrixAnimator.Builder builder = new ImageMatrixAnimator.Builder(this)
                 .toScaleX(scale)
                 .toScaleY(scale)
-                .setScaleInterpolator(zoomInOutInterpolator)
                 .toRotate(0)
                 .duration(220);
         if (scale == laidOutScaleX) {
             if (!isLongPhoto) {
-                builder.toTranslateX(imageViewWidth / 2);
-                builder.toTranslateY(imageViewHeight / 2);
+                builder.toTranslateX(imageViewWidth / 2)
+                        .toTranslateY(imageViewHeight / 2);
             } else {
-                builder.toTranslateX(imageViewWidth / 2);
-                builder.toTranslateY(centerY);
-                builder.setAnimCenter(imageCenter[0], centerY);
+                checkOverScale2Fit4LongPhoto(centerX, centerY, new CheckOverScaleCallback() {
+                    @Override
+                    public void theResult(float scx, float scy) {
+                        builder.toTranslateX(scx);
+                        builder.toTranslateY(scy);
+                    }
+                });
+                builder.setAnimCenter(centerX, centerY);
             }
         } else {
             builder.setAnimCenter(centerX, centerY);
         }
         builder.build()
                 .start();
+    }
+
+    private interface CheckOverScaleCallback {
+        void theResult(float scx, float scy);
+    }
+
+    //only for targetScale = laidOutScaleX and isLongPhoto
+    private void checkOverScale2Fit4LongPhoto(float scx,
+                                              float scy,
+                                              CheckOverScaleCallback overScaledCallback) {
+
+        final float targetScale = laidOutScaleX;
+
+        final float imgLeft = getImageTranslateX();
+        final float imgTop = getImageTranslateY();
+
+        final float imgH = getImageScaleY() * drawableIntrinsicHeight;
+
+        final float toImgLeft = scx - imgLeft;
+
+        final float toImgTop = scy - imgTop;
+        final float toImgBottom = imgH - toImgTop;
+
+        final float currScaleX = getImageScaleX();
+        final float currScaleY = getImageScaleY();
+
+        final float scaled2Left = toImgLeft / currScaleX * targetScale;
+
+        final float scaled2Top = toImgTop / currScaleY * targetScale;
+        final float scaled2Bottom = toImgBottom / currScaleY * targetScale;
+
+        float targetY;
+        if (scaled2Top < scy) {
+            targetY = scaled2Top;
+        } else if (scaled2Bottom < (imageViewHeight - scy)) {
+            targetY = scy + ((imageViewHeight - scy) - scaled2Bottom);
+        } else {
+            targetY = scy;
+        }
+        overScaledCallback.theResult(scaled2Left, targetY);
     }
 }

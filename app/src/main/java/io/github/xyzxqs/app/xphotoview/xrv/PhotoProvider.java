@@ -1,6 +1,5 @@
 package io.github.xyzxqs.app.xphotoview.xrv;
 
-import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -9,9 +8,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
 
 import io.github.xyzxqs.app.xphotoview.R;
 import io.github.xyzxqs.libs.xrv.XrvProvider;

@@ -1,1 +1,1 @@
-include ':app', ':libxphotoview'
+include ':app', ':xphotoview'
