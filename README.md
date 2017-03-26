@@ -17,7 +17,7 @@ the gesture behavior more like Google Photos
 With gradle:
 ```groovy
 dependencies {
-    compile 'io.github.xyzxqs.libs:xphotoview:1.0.0'
+    compile 'io.github.xyzxqs.libs:xphotoview:1.1.0'
 }
 ```
 
