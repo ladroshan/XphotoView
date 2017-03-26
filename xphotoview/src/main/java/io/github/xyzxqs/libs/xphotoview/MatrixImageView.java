@@ -157,6 +157,11 @@ class MatrixImageView extends AppCompatImageView {
         }
     }
 
+    /**
+     * Only {@link ScaleType#MATRIX} can be used
+     *
+     * @param scaleType
+     */
     @CallSuper
     @Override
     public void setScaleType(ScaleType scaleType) {
@@ -167,14 +172,35 @@ class MatrixImageView extends AppCompatImageView {
         }
     }
 
+    /**
+     * Translate ImageView's drawable (not this view itself) to given position(x,y), relative to the drawable's left top
+     * corner.
+     *
+     * @param x the ImageView drawable's left
+     * @param y the ImageView drawable's top
+     */
     public void translateImageToPosition(float x, float y) {
         postTranslate(x - getImageTranslateX(), y - getImageTranslateY());
     }
 
+    /**
+     * Scale ImageView's drawable (not this view itself) at given position.
+     *
+     * @param scale   scale the drawable to
+     * @param centerX the x of fixed point
+     * @param centerY the y of fixed point
+     */
     public void scaleImageAtPosition(float scale, float centerX, float centerY) {
         postScale(scale / getImageScaleX(), centerX, centerY);
     }
 
+    /**
+     * Rotate ImageView's drawable (not this view itself) at given position
+     *
+     * @param degrees degrees value the ImageView rotate
+     * @param centerX the x of fixed point
+     * @param centerY the y of fixed point
+     */
     public void rotateImageAtPositon(float degrees, float centerX, float centerY) {
         postRotate(degrees - getImageAngle(), centerX, centerY);
     }
@@ -212,22 +238,47 @@ class MatrixImageView extends AppCompatImageView {
         }
     }
 
+    /**
+     * Get the image drawable's (not this view itself) scaleX
+     *
+     * @return scaleX
+     */
     public final float getImageScaleX() {
         return getMatrixScaleX(imageMatrix);
     }
 
+    /**
+     * Get the image drawable's (not this view itself) scaleY
+     *
+     * @return scaleY
+     */
     public final float getImageScaleY() {
         return getMatrixScaleY(imageMatrix);
     }
 
+    /**
+     * Get the image drawable's (not this view itself) rotate angle
+     *
+     * @return rotate angle
+     */
     public final float getImageAngle() {
         return getMatrixAngle(imageMatrix);
     }
 
+    /**
+     * Get the image drawable's (not this view itself) translateX
+     *
+     * @return translateX
+     */
     public final float getImageTranslateX() {
         return getMatrixTranslateX(imageMatrix);
     }
 
+    /**
+     * Get the image drawable's (not this view itself) translateY
+     *
+     * @return translateY
+     */
     public final float getImageTranslateY() {
         return getMatrixTranslateY(imageMatrix);
     }

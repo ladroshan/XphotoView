@@ -18,7 +18,6 @@ package io.github.xyzxqs.libs.xphotoview;
 
 import android.app.Activity;
 import android.content.Context;
-import android.gesture.Gesture;
 import android.graphics.Matrix;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
