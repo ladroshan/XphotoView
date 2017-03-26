@@ -36,7 +36,7 @@ import static io.github.xyzxqs.libs.xphotoview.MatrixUtils.getMatrixTranslateY;
  * @author xyzxqs (xyzxqs@gmail.com)
  */
 
-abstract class MatrixImageView extends AppCompatImageView {
+class MatrixImageView extends AppCompatImageView {
 
     protected final float[] imageCorners = new float[8];
     protected final float[] imageCenter = new float[2];
