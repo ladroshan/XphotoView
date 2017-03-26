@@ -11,7 +11,9 @@ the gesture behavior more like Google Photos
 
 ## Screenshots
 
-<img src="/screenshots/xphotoview-demo.gif" alt="screenshot" title="xphotoview" width="270" height="486" />
+<img src="/screenshots/xphotoview-1.gif" alt="screenshot" title="xphotoview" width="240" height="400" /> <img src="/screenshots/xphotoview-2.gif" alt="screenshot" title="xphotoview" width="240" height="400" />
+<img src="/screenshots/xphotoview-3.gif" alt="screenshot" title="xphotoview" width="240" height="400" /> <img src="/screenshots/xphotoview-4.gif" alt="screenshot" title="xphotoview" width="240" height="400" />
+<img src="/screenshots/xphotoview-5.gif" alt="screenshot" title="xphotoview" width="240" height="400" />
 
 ## Getting started
 With gradle:
