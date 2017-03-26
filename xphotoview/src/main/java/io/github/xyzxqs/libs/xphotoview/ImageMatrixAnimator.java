@@ -548,8 +548,25 @@ class ImageMatrixAnimator {
         }
 
         private void notifyListeners(Callback callback) {
+            boolean containNullEntries = false;
             for (AnimatorListener listener : listenerList) {
-                callback.action(listener);
+                if (listener != null) {
+                    callback.action(listener);
+                } else {
+                    containNullEntries = true;
+                }
+            }
+            if (containNullEntries) {
+                removeNullEntries(listenerList);
+            }
+        }
+
+        private void removeNullEntries(List<AnimatorListener> list) {
+            // Clean up null entries
+            for (int i = list.size() - 1; i >= 0; i--) {
+                if (list.get(i) == null) {
+                    list.remove(i);
+                }
             }
         }
 
