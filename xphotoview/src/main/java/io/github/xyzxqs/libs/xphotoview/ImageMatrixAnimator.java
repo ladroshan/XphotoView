@@ -35,7 +35,11 @@ import static io.github.xyzxqs.libs.xphotoview.MatrixUtils.getMatrixTranslateX;
 import static io.github.xyzxqs.libs.xphotoview.MatrixUtils.getMatrixTranslateY;
 
 /**
+ * Animate the {@link Matrix} that is applied to the view's drawable when it is drawn.
+ * Allows custom scaling, rotating translation, but perspective distortion.
+ *
  * @author xyzxqs (xyzxqs@gmail.com)
+ * @see ImageView#setImageMatrix(Matrix)
  */
 
 class ImageMatrixAnimator {
