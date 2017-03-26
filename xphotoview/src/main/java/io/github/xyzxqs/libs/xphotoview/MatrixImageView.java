@@ -180,7 +180,7 @@ class MatrixImageView extends AppCompatImageView {
     }
 
     @CallSuper
-    public void postTranslate(float deltaX, float deltaY) {
+    protected void postTranslate(float deltaX, float deltaY) {
         if (deltaX != 0 || deltaY != 0) {
             imageMatrix.postTranslate(deltaX, deltaY);
             setImageMatrix(imageMatrix);
@@ -189,7 +189,7 @@ class MatrixImageView extends AppCompatImageView {
     }
 
     @CallSuper
-    public void postScale(float deltaScale, float px, float py) {
+    protected void postScale(float deltaScale, float px, float py) {
         if (deltaScale != 0) {
             imageMatrix.postScale(deltaScale, deltaScale, px, py);
             setImageMatrix(imageMatrix);
@@ -197,7 +197,7 @@ class MatrixImageView extends AppCompatImageView {
     }
 
     @CallSuper
-    public void postScale(float deltaScaleX, float deltaScaleY, float px, float py) {
+    protected void postScale(float deltaScaleX, float deltaScaleY, float px, float py) {
         if (deltaScaleX != 0 && deltaScaleY != 0) {
             imageMatrix.postScale(deltaScaleX, deltaScaleY, px, py);
             setImageMatrix(imageMatrix);
@@ -205,7 +205,7 @@ class MatrixImageView extends AppCompatImageView {
     }
 
     @CallSuper
-    public void postRotate(float deltaDegrees, float px, float py) {
+    protected void postRotate(float deltaDegrees, float px, float py) {
         if (deltaDegrees != 0) {
             imageMatrix.postRotate(deltaDegrees, px, py);
             setImageMatrix(imageMatrix);

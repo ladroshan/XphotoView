@@ -18,6 +18,7 @@ package io.github.xyzxqs.libs.xphotoview;
 
 import android.app.Activity;
 import android.content.Context;
+import android.gesture.Gesture;
 import android.graphics.Matrix;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -33,7 +34,7 @@ import io.github.xyzxqs.libs.xphotoview.GooglePhotosGestureDetector.GooglePhotos
  * @author xyzxqs (xyzxqs@gmail.com)
  */
 
-public class XphotoView extends MatrixImageView implements GooglePhotosGestureListener {
+public class XphotoView extends MatrixImageView {
     private static final String TAG = XphotoView.class.getSimpleName();
 
     public interface Callback {
@@ -54,8 +55,8 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     private static final float H_SPACE_CLOSE_WINDOW = 40;
     private static final float H_SPACE_THRESHOLD = 200;
 
-    private GooglePhotosGestureDetector gestureDetector;
-    private ScrollerCompat scrollerCompat;
+    private final GooglePhotosGestureDetector gestureDetector;
+    private final ScrollerCompat scrollerCompat;
 
     private Callback callback;
     private int initLeft;
@@ -94,11 +95,8 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
 
     public XphotoView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context, attrs, defStyleAttr);
-    }
-
-    private void init(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        gestureDetector = new GooglePhotosGestureDetector(context, this);
+        XphotoGestureListener gestureListener = new XphotoGestureListener();
+        gestureDetector = new GooglePhotosGestureDetector(context, gestureListener);
         scrollerCompat = ScrollerCompat.create(context);
     }
 
@@ -216,121 +214,9 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
         return isLongPhoto ? scaleAlpha : Math.min(scaleAlpha, distanceAlpha);
     }
 
-    @Override
-    public boolean onDoubleTapEvent(MotionEvent e) {
-        if (e.getActionMasked() == MotionEvent.ACTION_UP) {
-            isDoubleTapping = true;
-            if (isCurrStepScale()) {
-                float scale = getNextStepValue() * laidOutScaleX;
-                animate2ZoomImage(scale, e.getX(), e.getY());
-            } else {
-                animate2ZoomImage(laidOutScaleX, e.getX(), e.getY());
-                scaleStepsIndex = 0;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isCurrStepScale() {
-        float scale = getImageScaleX() * drawableIntrinsicWidth / imageViewWidth;
-        return Math.abs(scale - getCurrStepValue()) < 0.1;
-    }
-
-    private float getCurrStepValue() {
-        return scaleStepValues[((scaleStepsIndex) % scaleStepValues.length)];
-    }
-
-    private float getNextStepValue() {
-        return scaleStepValues[((++scaleStepsIndex) % scaleStepValues.length)];
-    }
-
-    @Override
-    public boolean onSingleFingerScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-        if (isNew4SFScroll) {
-            initMotionY4Scroll = e2.getY();
-            isNew4SFScroll = false;
-        }
-        float currScale = getImageScaleX();
-        float offset, cx, cy;
-        if (!isLongPhoto) {
-            offset = getOffCenterDistance();
-            cx = imageCenter[0];
-            cy = imageCenter[1];
-        } else {
-            offset = getOverDistance(e2.getY());
-            cx = imageViewWidth / 2;
-            cy = imageViewHeight / 2;
-        }
-        if (offset < H_SPACE_THRESHOLD && currScale <= laidOutScaleX * 1.05) {
-            isInSFScrollChangeScale = true;
-            final float scale = (imageViewWidth - offset) / drawableIntrinsicWidth;
-            scaleImageAtPosition(scale, cx, cy);
-        }
-        postTranslate(-distanceX, -distanceY);
-        return true;
-    }
-
     private float getOffCenterDistance() {
         return (float) Math.hypot(Math.abs(imageCenter[0] - imageViewWidth / 2),
                 Math.abs(imageCenter[1] - imageViewHeight / 2));
-    }
-
-    private float getOverDistance(float currY) {
-        float top = getImageTranslateY();
-        float bottom = top + getImageScaleY() * drawableIntrinsicHeight;
-        float dy = currY - initMotionY4Scroll;
-        float overTop = 300;
-        float overBottom = 300;
-
-        if (dy > 0) {
-            if (top >= 0) {
-                overTop = dy;
-            } else {
-                isInSFScrollChangeScale = false;
-            }
-        } else {
-            if (bottom <= imageViewHeight) {
-                overBottom = -dy;
-            } else {
-                isInSFScrollChangeScale = false;
-            }
-        }
-
-        return Math.min(overTop, overBottom);
-    }
-
-    @Override
-    public boolean onMultiFingerScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-        postTranslate(-distanceX, -distanceY);
-        return true;
-    }
-
-    @Override
-    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-        final float h = getImageScaleY() * drawableIntrinsicHeight;
-        final float w = getImageScaleX() * drawableIntrinsicWidth;
-        int hs = (int) (imageViewHeight - h);
-        int ws = (int) (imageViewWidth - w);
-        int cx = (int) ((imageViewWidth - w) / 2);
-        int cy = (int) ((imageViewHeight - h) / 2);
-        if ((hs < 0 || ws < 0)
-                && !isDoubleTapping
-                && !isRotated()
-                && !(isInSFScrollChangeScale && isLongPhoto)) {
-            scrollerCompat.fling((int) getImageTranslateX(), (int) getImageTranslateY(),
-                    (int) velocityX,
-                    (int) velocityY,
-                    ws < 0 ? ws : cx,
-                    ws < 0 ? 0 : cx,
-                    hs < 0 ? hs : cy,
-                    hs < 0 ? 0 : cy,
-                    80,
-                    80);
-            isOnFling = true;
-            invalidate();
-        }
-        return hs < 0 || ws < 0;
     }
 
     @Override
@@ -358,77 +244,9 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
     }
 
     @Override
-    public boolean onScale(float scaleFactor, float focusX, float focusY) {
-        postScale(scaleFactor, focusX, focusY);
-        if (isNewEvent4Scale) {
-            firstScaleIsZoomOut = getImageScaleX() < laidOutScaleX;
-            isNewEvent4Scale = false;
-        }
-        return true;
-    }
-
-
-    @Override
-    public boolean onRotation(float deltaDegree, float cx, float cy) {
-        boolean rotatable = firstScaleIsZoomOut && !isLongPhoto;
-        if (rotatable) {
-            postRotate(deltaDegree, cx, cy);
-        }
-        return rotatable;
-    }
-
-    @Override
-    public void onActionDown(MotionEvent event) {
-        scrollerCompat.abortAnimation();
-    }
-
-    @Override
-    public boolean onActionUp(MotionEvent event) {
-        isNewEvent4Scale = true;
-        isNew4SFScroll = true;
-        isInSFScrollChangeScale = false;
-        if (!isDoubleTapping) {
-            float scale = getImageScaleX();
-            if (scale * drawableIntrinsicWidth <= imageViewWidth - (H_SPACE_THRESHOLD - H_SPACE_CLOSE_WINDOW)) {
-                if (initArgsHasSet()) {
-                    dismissPreview();
-                } else if (!isOnFling) {
-                    //if the init args not set, just animate to fit image view.
-                    animate2FitView();
-                }
-            } else if (!isOnFling) {
-                if ((Math.abs(getImageAngle()) > 10 || scale < laidOutScaleX) && !isLongPhoto) {
-                    animate2FitView();
-                } else {
-                    animate2FitXYIfNeed(scale < laidOutScaleX);
-                }
-            }
-            return true;
-        }
-        isDoubleTapping = false;
-        return false;
-    }
-
-    @Override
     public boolean onTouchEvent(MotionEvent event) {
         return gestureDetector.onTouchEvent(event) | super.onTouchEvent(event);
     }
-
-    /*
-    private interface XYOverCheckerCallback {
-        void onOverChecked(float left, float top, float right, float bottom);
-    }
-
-    private void xyOverCheck(float x, float y, XYOverCheckerCallback callback) {
-        final float h = getImageScaleY() * drawableIntrinsicHeight;
-        final float w = getImageScaleX() * drawableIntrinsicWidth;
-        final float l = x - 0;
-        final float t = y - 0;
-        final float r = imageViewWidth - (x + w);
-        final float b = imageViewHeight - (y + h);
-        callback.onOverChecked(l, t, r, b);
-    }
-    */
 
     private void animate2FitXYIfNeed(final boolean fitWidth) {
         final float h = getImageScaleY() * drawableIntrinsicHeight;
@@ -591,5 +409,171 @@ public class XphotoView extends MatrixImageView implements GooglePhotosGestureLi
             targetY = scy;
         }
         overScaledCallback.theResult(scaled2Left, targetY);
+    }
+
+    private class XphotoGestureListener implements GooglePhotosGestureListener {
+
+        @Override
+        public boolean onDoubleTapEvent(MotionEvent e) {
+            if (e.getActionMasked() == MotionEvent.ACTION_UP) {
+                isDoubleTapping = true;
+                if (isCurrStepScale()) {
+                    float scale = getNextStepValue() * laidOutScaleX;
+                    animate2ZoomImage(scale, e.getX(), e.getY());
+                } else {
+                    animate2ZoomImage(laidOutScaleX, e.getX(), e.getY());
+                    scaleStepsIndex = 0;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private boolean isCurrStepScale() {
+            float scale = getImageScaleX() * drawableIntrinsicWidth / imageViewWidth;
+            return Math.abs(scale - getCurrStepValue()) < 0.1;
+        }
+
+        private float getCurrStepValue() {
+            return scaleStepValues[((scaleStepsIndex) % scaleStepValues.length)];
+        }
+
+        private float getNextStepValue() {
+            return scaleStepValues[((++scaleStepsIndex) % scaleStepValues.length)];
+        }
+
+        @Override
+        public boolean onSingleFingerScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            if (isNew4SFScroll) {
+                initMotionY4Scroll = e2.getY();
+                isNew4SFScroll = false;
+            }
+            float currScale = getImageScaleX();
+            float offset, cx, cy;
+            if (!isLongPhoto) {
+                offset = getOffCenterDistance();
+                cx = imageCenter[0];
+                cy = imageCenter[1];
+            } else {
+                offset = getOverDistance(e2.getY());
+                cx = imageViewWidth / 2;
+                cy = imageViewHeight / 2;
+            }
+            if (offset < H_SPACE_THRESHOLD && currScale <= laidOutScaleX * 1.05) {
+                isInSFScrollChangeScale = true;
+                final float scale = (imageViewWidth - offset) / drawableIntrinsicWidth;
+                scaleImageAtPosition(scale, cx, cy);
+            }
+            postTranslate(-distanceX, -distanceY);
+            return true;
+        }
+
+        private float getOverDistance(float currY) {
+            float top = getImageTranslateY();
+            float bottom = top + getImageScaleY() * drawableIntrinsicHeight;
+            float dy = currY - initMotionY4Scroll;
+            float overTop = 300;
+            float overBottom = 300;
+
+            if (dy > 0) {
+                if (top >= 0) {
+                    overTop = dy;
+                } else {
+                    isInSFScrollChangeScale = false;
+                }
+            } else {
+                if (bottom <= imageViewHeight) {
+                    overBottom = -dy;
+                } else {
+                    isInSFScrollChangeScale = false;
+                }
+            }
+
+            return Math.min(overTop, overBottom);
+        }
+
+        @Override
+        public boolean onMultiFingerScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            postTranslate(-distanceX, -distanceY);
+            return true;
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            final float h = getImageScaleY() * drawableIntrinsicHeight;
+            final float w = getImageScaleX() * drawableIntrinsicWidth;
+            int hs = (int) (imageViewHeight - h);
+            int ws = (int) (imageViewWidth - w);
+            int cx = (int) ((imageViewWidth - w) / 2);
+            int cy = (int) ((imageViewHeight - h) / 2);
+            if ((hs < 0 || ws < 0)
+                    && !isDoubleTapping
+                    && !isRotated()
+                    && !(isInSFScrollChangeScale && isLongPhoto)) {
+                scrollerCompat.fling((int) getImageTranslateX(), (int) getImageTranslateY(),
+                        (int) velocityX,
+                        (int) velocityY,
+                        ws < 0 ? ws : cx,
+                        ws < 0 ? 0 : cx,
+                        hs < 0 ? hs : cy,
+                        hs < 0 ? 0 : cy,
+                        80,
+                        80);
+                isOnFling = true;
+                invalidate();
+            }
+            return hs < 0 || ws < 0;
+        }
+
+        @Override
+        public boolean onScale(float scaleFactor, float focusX, float focusY) {
+            postScale(scaleFactor, focusX, focusY);
+            if (isNewEvent4Scale) {
+                firstScaleIsZoomOut = getImageScaleX() < laidOutScaleX;
+                isNewEvent4Scale = false;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean onRotation(float deltaDegree, float cx, float cy) {
+            boolean rotatable = firstScaleIsZoomOut && !isLongPhoto;
+            if (rotatable) {
+                postRotate(deltaDegree, cx, cy);
+            }
+            return rotatable;
+        }
+
+        @Override
+        public void onActionDown(MotionEvent event) {
+            scrollerCompat.abortAnimation();
+        }
+
+        @Override
+        public boolean onActionUp(MotionEvent event) {
+            isNewEvent4Scale = true;
+            isNew4SFScroll = true;
+            isInSFScrollChangeScale = false;
+            if (!isDoubleTapping) {
+                float scale = getImageScaleX();
+                if (scale * drawableIntrinsicWidth <= imageViewWidth - (H_SPACE_THRESHOLD - H_SPACE_CLOSE_WINDOW)) {
+                    if (initArgsHasSet()) {
+                        dismissPreview();
+                    } else if (!isOnFling) {
+                        //if the init args not set, just animate to fit image view.
+                        animate2FitView();
+                    }
+                } else if (!isOnFling) {
+                    if ((Math.abs(getImageAngle()) > 10 || scale < laidOutScaleX) && !isLongPhoto) {
+                        animate2FitView();
+                    } else {
+                        animate2FitXYIfNeed(scale < laidOutScaleX);
+                    }
+                }
+                return true;
+            }
+            isDoubleTapping = false;
+            return false;
+        }
     }
 }
